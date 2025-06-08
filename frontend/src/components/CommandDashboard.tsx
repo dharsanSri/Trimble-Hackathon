@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, addDoc, collection, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,36 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Shield, LogOut, Plus } from "lucide-react";
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-  onSnapshot,
-} from "firebase/firestore";
+import { Shield, LogOut, Plus, AlertCircle, Info, Home } from "lucide-react";
 import { db } from "@/firebase";
 import FloodRiskMap from "./FloodRiskMap";
-import FloodPredictionStats from "./FloodPredictionStats";
 import { getAndStoreWeatherForecast } from "@/services/weatherService";
-import { districtCoordinates } from "@/lib/geoData";
-import {
-  Building2,
-  FileText,
-  Users,
-  MapPin,
-  AlertCircle,
-  CloudSunRain,
-  ArrowRight,
-  Bell,
-  Settings,
-  ChevronRight,
-  RefreshCw,
-  Droplets,
-  Wind,
-  Info,
-  Home,
-  BarChart3,
-} from "lucide-react";
 
 interface WorkItem {
   id: string;
@@ -53,14 +27,13 @@ interface WorkItem {
   assignedTo: string;
   comment?: string;
   timestamp?: any;
+  district: string;
 }
 
 const CommandDashboard = () => {
   const navigate = useNavigate();
 
-  const [newWork, setNewWork] = useState<
-    Omit<WorkItem, "status" | "assignedTo" | "timestamp" | "id">
-  >({
+  const [newWork, setNewWork] = useState<Omit<WorkItem, "status" | "assignedTo" | "timestamp" | "id" | "district">>({
     title: "",
     description: "",
     priority: "medium",
@@ -79,10 +52,12 @@ const CommandDashboard = () => {
     riskLevel:
       Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
   });
+
   useEffect(() => {
     fetchUserData();
-    // fetchWeatherData();
+    fetchWeatherData();
   }, []);
+
   const fetchUserData = async () => {
     try {
       const auth = getAuth();
@@ -94,33 +69,25 @@ const CommandDashboard = () => {
         return;
       }
 
-      // Get user document from Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
-        setError("User not found");
-        setLoading(false);
-        return;
-      }
-
-      // Get further details document
       const furtherDetailsDocRef = doc(db, "furtherdetails", user.uid);
       const furtherDetailsDoc = await getDoc(furtherDetailsDocRef);
 
-      if (!furtherDetailsDoc.exists()) {
-        setError("User details not found");
+      if (!userDoc.exists() || !furtherDetailsDoc.exists()) {
+        setError("User or user details not found");
         setLoading(false);
         return;
       }
 
-      // Combine user data
-      const userData = {
+      const combinedUserData = {
         ...userDoc.data(),
         ...furtherDetailsDoc.data(),
       };
 
-      setUserData(userData);
+      console.log("Loaded user data with district:", combinedUserData.district);
+      setUserData(combinedUserData);
     } catch (err: any) {
       console.error("Error fetching user data:", err);
       setError(err.message || "Failed to load user data");
@@ -129,52 +96,48 @@ const CommandDashboard = () => {
     }
   };
 
-  // const fetchWeatherData = async () => {
-  //   try {
-  //     setRefreshing(true);
-  //     const data = await getAndStoreWeatherForecast();
+  const fetchWeatherData = async () => {
+    try {
+      setRefreshing(true);
+      const data = await getAndStoreWeatherForecast();
 
-  //     const dailyForecast = data.forecast.forecastday.map((day: any) => {
-  //       const date = new Date(day.date);
-  //       const dayName = date.toLocaleDateString("en-US", {
-  //         weekday: "short",
-  //       });
-  //       const temp = Math.round(day.day.avgtemp_c) + "°C";
-  //       const rain = Math.round(day.day.daily_chance_of_rain) + "%";
-  //       const condition = day.day.condition.text;
-  //       const icon = day.day.condition.icon;
+      const dailyForecast = data.forecast.forecastday.map((day: any) => {
+        const date = new Date(day.date);
+        const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+        const temp = Math.round(day.day.avgtemp_c) + "°C";
+        const rain = Math.round(day.day.daily_chance_of_rain) + "%";
+        const condition = day.day.condition.text;
+        const icon = day.day.condition.icon;
 
-  //       return { day: dayName, temp, condition, rain, icon };
-  //     });
+        return { day: dayName, temp, condition, rain, icon };
+      });
 
-  //     setWeatherForecast(dailyForecast);
+      setWeatherForecast(dailyForecast);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-  //     // Update district weather data
-  //     setDistrictWeatherData({
-  //       rainfall: Math.random() * 50 + 10,
-  //       windSpeed: Math.random() * 30 + 5,
-  //       alerts: Math.random() > 0.7,
-  //       riskLevel:
-  //         Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
-  //     });
-  //   } catch (err: any) {
-  //     setError(err.message);
-  //   } finally {
-  //     setLoading(false);
-  //     setRefreshing(false);
-  //   }
-  // };
   const handleLogout = () => {
     navigate("/");
   };
 
   const handleAddWork = async () => {
+    if (!userData || !userData.district) {
+      alert("User data or district not loaded. Please wait.");
+      return;
+    }
+
     if (newWork.title && newWork.description) {
       const work = {
         ...newWork,
         status: "pending",
         assignedTo: "Unassigned",
         timestamp: serverTimestamp(),
+        district: userData.district,
       };
 
       try {
@@ -215,12 +178,10 @@ const CommandDashboard = () => {
         return "text-gray-600 bg-gray-50";
     }
   };
-  // New utility function for smooth transitions
-  const getTransitionClasses = () => {
-    return "transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg";
-  };
 
-  // Enhanced color palette and risk assessment
+  const getTransitionClasses = () =>
+    "transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg";
+
   const getRiskDetails = (risk: string) => {
     switch (risk) {
       case "high":
@@ -259,12 +220,13 @@ const CommandDashboard = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "newcollection"),
-      (snapshot) => {
-        const workItems: WorkItem[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+    if (!userData?.district) return;
+
+    const unsubscribe = onSnapshot(collection(db, "newcollection"), (snapshot) => {
+      const workItems: WorkItem[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.district === userData.district) {
           workItems.push({
             id: doc.id,
             title: data.title ?? "Untitled",
@@ -274,14 +236,15 @@ const CommandDashboard = () => {
             assignedTo: data.assignedTo ?? "Unassigned",
             comment: data.comment ?? "",
             timestamp: data.timestamp,
+            district: data.district,
           });
-        });
-        setWorkList(workItems);
-      }
-    );
+        }
+      });
+      setWorkList(workItems);
+    });
 
     return () => unsubscribe();
-  }, []);
+  }, [userData?.district]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -294,11 +257,7 @@ const CommandDashboard = () => {
                 Command Officer Control Center
               </h1>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
+            <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
               <LogOut className="h-4 w-4" />
               Logout
             </Button>
@@ -308,32 +267,21 @@ const CommandDashboard = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Command Operations Dashboard
-          </h2>
-          <p className="text-gray-600">
-            Coordinate emergency response operations and manage field teams
-          </p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Command Operations Dashboard</h2>
+          <p className="text-gray-600">Coordinate emergency response operations and manage field teams</p>
         </div>
-        {/* District Map and Weather Data */}
 
-        <Card
-          className={`col-span-2 bg-white shadow-sm ${getTransitionClasses()}`}
-        >
+        <Card className={`col-span-2 bg-white shadow-sm ${getTransitionClasses()}`}>
           <CardHeader className="pb-2">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div>
-                <CardTitle className="text-lg text-gray-900">
-                  District Flood Risk Map
-                </CardTitle>
+                <CardTitle className="text-lg text-gray-900">District Flood Risk Map</CardTitle>
                 <CardDescription>
                   Real-time flood risk assessment for {userData?.district}
                 </CardDescription>
               </div>
               <span
-                className={`text-xs px-2 py-1 rounded-full mt-2 sm:mt-0 ${
-                  getRiskDetails(districtWeatherData.riskLevel).bgColor
-                } ${getRiskDetails(districtWeatherData.riskLevel).color}`}
+                className={`text-xs px-2 py-1 rounded-full mt-2 sm:mt-0 ${getRiskDetails(districtWeatherData.riskLevel).bgColor} ${getRiskDetails(districtWeatherData.riskLevel).color}`}
               >
                 {districtWeatherData.riskLevel.toUpperCase()} RISK
               </span>
@@ -341,25 +289,19 @@ const CommandDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[350px] border rounded overflow-hidden">
-              <FloodRiskMap
-                userRole="districtOfficer"
-                assignedDistrict={userData?.district}
-              />
+              <FloodRiskMap userRole="districtOfficer" assignedDistrict={userData?.district} />
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Add New Work */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-blue-600" />
                 Post New Work Assignment
               </CardTitle>
-              <CardDescription>
-                Create and assign new tasks to field teams
-              </CardDescription>
+              <CardDescription>Create and assign new tasks to field teams</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -368,9 +310,7 @@ const CommandDashboard = () => {
                   <Input
                     id="work-title"
                     value={newWork.title}
-                    onChange={(e) =>
-                      setNewWork({ ...newWork, title: e.target.value })
-                    }
+                    onChange={(e) => setNewWork({ ...newWork, title: e.target.value })}
                     placeholder="Enter work title"
                   />
                 </div>
@@ -379,9 +319,7 @@ const CommandDashboard = () => {
                   <Textarea
                     id="work-description"
                     value={newWork.description}
-                    onChange={(e) =>
-                      setNewWork({ ...newWork, description: e.target.value })
-                    }
+                    onChange={(e) => setNewWork({ ...newWork, description: e.target.value })}
                     placeholder="Describe the work assignment in detail"
                     rows={3}
                   />
@@ -392,10 +330,7 @@ const CommandDashboard = () => {
                     id="priority"
                     value={newWork.priority}
                     onChange={(e) =>
-                      setNewWork({
-                        ...newWork,
-                        priority: e.target.value as "low" | "medium" | "high",
-                      })
+                      setNewWork({ ...newWork, priority: e.target.value as "low" | "medium" | "high" })
                     }
                     className="w-full p-2 border border-gray-300 rounded-md"
                   >
@@ -412,46 +347,33 @@ const CommandDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Work Status Overview */}
           <Card>
             <CardHeader>
               <CardTitle>Work Assignment Status</CardTitle>
-              <CardDescription>
-                Track completion status of assigned tasks
-              </CardDescription>
+              <CardDescription>Track completion status of assigned tasks</CardDescription>
             </CardHeader>
             <CardContent>
               {workList.length === 0 ? (
-                <p className="text-gray-500 text-sm">
-                  No work assignments yet. Add one using the form.
-                </p>
+                <p className="text-gray-500 text-sm">No work assignments yet. Add one using the form.</p>
               ) : (
                 <div className="space-y-3">
                   {workList.map((work) => (
                     <div
                       key={work.id}
-                      className={`p-4 rounded-lg border ${getPriorityColor(
-                        work.priority
-                      )}`}
+                      className={`p-4 rounded-lg border ${getPriorityColor(work.priority)}`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold">{work.title}</h4>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                            work.status
-                          )}`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(work.status)}`}
                         >
                           {work.status.toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {work.description}
-                      </p>
+                      <p className="text-sm text-gray-600 mb-2">{work.description}</p>
                       {work.comment && (
                         <div className="mt-2">
-                          <Label htmlFor={`comment-${work.id}`}>
-                            Field Worker Comments
-                          </Label>
+                          <Label htmlFor={`comment-${work.id}`}>Field Worker Comments</Label>
                           <Textarea
                             id={`comment-${work.id}`}
                             readOnly
@@ -461,9 +383,7 @@ const CommandDashboard = () => {
                         </div>
                       )}
                       <div className="flex justify-end text-xs mt-2">
-                        <span className="font-medium">
-                          {work.priority.toUpperCase()} PRIORITY
-                        </span>
+                        <span className="font-medium">{work.priority.toUpperCase()} PRIORITY</span>
                       </div>
                     </div>
                   ))}

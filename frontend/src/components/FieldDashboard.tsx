@@ -146,26 +146,54 @@ const FieldDashboard = () => {
     }
   };
 
-  const fetchWorkAssignments = async () => {
-    try {
-      setLoadingWork(true);
-      const querySnapshot = await getDocs(collection(db, "newcollection"));
-      const works = [];
-      querySnapshot.forEach((doc) => {
-        works.push({ id: doc.id, ...doc.data() });
-      });
-      setAvailableWork(
-        works.filter(
-          (work) => work.status !== "completed" && work.status !== "in-progress"
-        )
-      );
-      setSelectedWork(works.filter((work) => work.status === "in-progress"));
-    } catch (error) {
-      console.error("Error fetching work assignments:", error);
-    } finally {
-      setLoadingWork(false);
-    }
-  };
+
+
+interface WorkAssignment {
+  id: string;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high";
+  status: "pending" | "in-progress" | "completed";
+  assignedTo: string;
+  comment?: string;
+  timestamp?: any;
+  district: string;
+}
+const fetchWorkAssignments = async () => {
+  try {
+    setLoadingWork(true);
+
+    const querySnapshot = await getDocs(collection(db, "newcollection"));
+    const works: WorkAssignment[] = [];
+
+    querySnapshot.forEach((docSnap) => {
+      // tell TS that docSnap.data() is of type WorkAssignment
+      const work = { id: docSnap.id, ...(docSnap.data() as WorkAssignment) };
+ 
+
+      // Only include work if district matches current user
+      if (work?.district === userData.district) {
+        works.push(work);
+      }
+    });
+
+    setAvailableWork(
+      works.filter(
+        (work) => work?.status !== "completed" && work?.status !== "in-progress"
+      )
+    );
+
+    setSelectedWork(
+      works.filter((work) => work?.status === "in-progress")
+    );
+  } catch (error) {
+    console.error("Error fetching work assignments:", error);
+  } finally {
+    setLoadingWork(false);
+  }
+};
+
+
 
   useEffect(() => {
     fetchWorkAssignments();
