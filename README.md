@@ -110,6 +110,49 @@ TRIMBLE-HACKATHON/
    |         +-- Assign Tasks to Field Workers
    +-- View Weather & Flood Maps
 ```
+## 🧑‍💼 User Value & System Benefits
+
+This Emergency Management System is designed to be a critical, life-saving coordination tool for government agencies and NGOs during flood-related emergencies. It bridges the communication gap between decision-makers and field responders through secure, real-time collaboration, geographic intelligence, and AI insights.
+
+---
+
+### 🧠 For Government Officials
+- **Visual Intelligence**: Instantly view flood-prone areas on an interactive GIS map.
+- **Informed Decision-Making**: 3-day weather data and AI-generated flood risk zones provide actionable insights.
+- **District-Level Monitoring**: Focus on specific regions for localized flood response.
+
+---
+
+### 📋 For Command Officers
+- **Centralized Task Management**: Easily create, prioritize, and assign tasks to field teams.
+- **Live Monitoring**: View real-time task completion statuses and field worker feedback.
+- **Operational Oversight**: Maintain control over emergency operations from the command dashboard.
+
+---
+
+### 🚒 For Field Workers
+- **Simplified Workflow**: View assigned tasks directly on the dashboard.
+- **On-the-Ground Reporting**: Submit comments or updates after completing tasks.
+- **Mobile-Friendly Access**: Lightweight UI ensures usability even in low-resource environments.
+
+---
+
+### 🔐 For Admins
+- **Secure Access Control**: Only approved users can access dashboards through Firebase Authentication.
+- **Role Verification**: Prevents misuse by ensuring that users access only their designated dashboards.
+- **Scalable User Management**: Easy onboarding and permission management through Firestore.
+
+---
+
+### 🌐 Overall System Value
+- ✅ **Security-first** design with Firebase authentication and admin role approvals.
+- ✅ **AI-powered decision support** using OpenRouter LLaMA-3 to predict flood zones from weather data.
+- ✅ **Real-time GIS integration** with Leaflet.js to render GeoJSON overlays for visual clarity.
+- ✅ **Efficient multi-role coordination** across stakeholders in one unified platform.
+- ✅ **Future-proof architecture** built with modular FastAPI backend and Vite + React frontend.
+
+> 🛡️ This system empowers emergency responders to act faster, plan smarter, and save lives during critical flood situations.
+
 ---
 ## 1. 🔐 Authentication System (Firebase)
 
