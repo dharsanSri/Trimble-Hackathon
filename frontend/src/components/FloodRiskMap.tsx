@@ -282,6 +282,7 @@ const FloodRiskMap: React.FC<FloodRiskMapProps> = ({
         setTimeout(() => {
           if (mapInstanceRef.current) {
             try {
+              console.log('zoomToDistrictByRole called with:', { role: userRole, assignedDistrict });
               zoomToDistrictByRole(mapInstanceRef.current, userRole, assignedDistrict);
             } catch (error) {
               console.error('Error zooming to district:', error);

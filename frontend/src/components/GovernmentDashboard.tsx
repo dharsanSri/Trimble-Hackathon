@@ -36,7 +36,6 @@ import FloodPredictionStats from "./FloodPredictionStats";
 import { getAndStoreWeatherForecast } from "@/services/weatherService";
 import { districtCoordinates } from "@/lib/geoData";
 
-
 const GovernmentDashboard = () => {
   const navigate = useNavigate();
   const [weatherForecast, setWeatherForecast] = useState<any[]>([]);
@@ -48,7 +47,8 @@ const GovernmentDashboard = () => {
     rainfall: Math.random() * 50 + 10,
     windSpeed: Math.random() * 30 + 5,
     alerts: Math.random() > 0.7,
-    riskLevel: Math.random() > 0.7 ? 'high' : Math.random() > 0.4 ? 'medium' : 'low'
+    riskLevel:
+      Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
   });
 
   useEffect(() => {
@@ -102,8 +102,6 @@ const GovernmentDashboard = () => {
     }
   };
 
-
-
   const fetchWeatherData = async () => {
     try {
       setRefreshing(true);
@@ -123,13 +121,14 @@ const GovernmentDashboard = () => {
       });
 
       setWeatherForecast(dailyForecast);
-      
+
       // Update district weather data
       setDistrictWeatherData({
         rainfall: Math.random() * 50 + 10,
         windSpeed: Math.random() * 30 + 5,
         alerts: Math.random() > 0.7,
-        riskLevel: Math.random() > 0.7 ? 'high' : Math.random() > 0.4 ? 'medium' : 'low'
+        riskLevel:
+          Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
       });
     } catch (err: any) {
       setError(err.message);
@@ -151,37 +150,37 @@ const GovernmentDashboard = () => {
   // Enhanced color palette and risk assessment
   const getRiskDetails = (risk: string) => {
     switch (risk) {
-      case 'high': 
-        return { 
-          color: 'text-red-700', 
-          bgColor: 'bg-red-50', 
-          borderColor: 'border-red-300', 
+      case "high":
+        return {
+          color: "text-red-700",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-300",
           icon: AlertCircle,
-          message: 'Critical Risk - Immediate Action Required'
+          message: "Critical Risk - Immediate Action Required",
         };
-      case 'medium': 
-        return { 
-          color: 'text-yellow-700', 
-          bgColor: 'bg-yellow-50', 
-          borderColor: 'border-yellow-300', 
+      case "medium":
+        return {
+          color: "text-yellow-700",
+          bgColor: "bg-yellow-50",
+          borderColor: "border-yellow-300",
           icon: Info,
-          message: 'Moderate Risk - Stay Vigilant'
+          message: "Moderate Risk - Stay Vigilant",
         };
-      case 'low': 
-        return { 
-          color: 'text-green-700', 
-          bgColor: 'bg-green-50', 
-          borderColor: 'border-green-300', 
+      case "low":
+        return {
+          color: "text-green-700",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-300",
           icon: Home,
-          message: 'Low Risk - Normal Operations'
+          message: "Low Risk - Normal Operations",
         };
-      default: 
-        return { 
-          color: 'text-gray-700', 
-          bgColor: 'bg-gray-50', 
-          borderColor: 'border-gray-300', 
+      default:
+        return {
+          color: "text-gray-700",
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-300",
           icon: Info,
-          message: 'Status Unknown'
+          message: "Status Unknown",
         };
     }
   };
@@ -210,7 +209,8 @@ const GovernmentDashboard = () => {
                 </h1>
                 {userData && userData.district && (
                   <p className="text-sm text-gray-500">
-                    {userData.firstName} {userData.lastName} • {userData.district} District
+                    {userData.firstName} {userData.lastName} •{" "}
+                    {userData.district} District
                   </p>
                 )}
               </div>
@@ -246,20 +246,24 @@ const GovernmentDashboard = () => {
               District-level emergency management and weather monitoring
             </p>
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="flex items-center gap-2 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
             onClick={fetchWeatherData}
             disabled={refreshing}
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+            />
             Refresh Data
           </Button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className={`border-t-2 border-t-green-500 ${getTransitionClasses()} group`}>
+          <Card
+            className={`border-t-2 border-t-green-500 ${getTransitionClasses()} group`}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 group-hover:text-green-600 transition-colors duration-200 text-sm">
                 <MapPin className="h-5 w-5 text-green-600" />
@@ -270,7 +274,9 @@ const GovernmentDashboard = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-2xl font-bold text-green-600">Normal</p>
-                  <p className="text-sm text-gray-600">All systems operational</p>
+                  <p className="text-sm text-gray-600">
+                    All systems operational
+                  </p>
                 </div>
                 <div className="bg-green-50 p-2 rounded-full">
                   <Home className="h-6 w-6 text-green-500" />
@@ -279,7 +285,9 @@ const GovernmentDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className={`border-t-2 border-t-blue-500 ${getTransitionClasses()} group`}>
+          <Card
+            className={`border-t-2 border-t-blue-500 ${getTransitionClasses()} group`}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 group-hover:text-blue-600 transition-colors duration-200 text-sm">
                 <FileText className="h-5 w-5 text-blue-600" />
@@ -299,7 +307,9 @@ const GovernmentDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className={`border-t-2 border-t-purple-500 ${getTransitionClasses()} group`}>
+          <Card
+            className={`border-t-2 border-t-purple-500 ${getTransitionClasses()} group`}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 group-hover:text-purple-600 transition-colors duration-200 text-sm">
                 <Users className="h-5 w-5 text-purple-600" />
@@ -319,7 +329,9 @@ const GovernmentDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className={`border-t-2 border-t-orange-500 ${getTransitionClasses()} group`}>
+          <Card
+            className={`border-t-2 border-t-orange-500 ${getTransitionClasses()} group`}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 group-hover:text-orange-600 transition-colors duration-200 text-sm">
                 <AlertCircle className="h-5 w-5 text-orange-600" />
@@ -342,33 +354,42 @@ const GovernmentDashboard = () => {
 
         {/* Alert Banner for District */}
         {districtWeatherData.alerts && (
-          <div className={`mb-8 border-l-4 p-4 rounded-md shadow-sm ${
-            getRiskDetails(districtWeatherData.riskLevel).borderColor
-          } ${
-            getRiskDetails(districtWeatherData.riskLevel).bgColor
-          } hover:shadow-md transition-all duration-300`}>
+          <div
+            className={`mb-8 border-l-4 p-4 rounded-md shadow-sm ${
+              getRiskDetails(districtWeatherData.riskLevel).borderColor
+            } ${
+              getRiskDetails(districtWeatherData.riskLevel).bgColor
+            } hover:shadow-md transition-all duration-300`}
+          >
             <div className="flex items-start">
-              {React.createElement(getRiskDetails(districtWeatherData.riskLevel).icon, {
-                className: `h-6 w-6 mr-2 mt-0.5 ${
-                  getRiskDetails(districtWeatherData.riskLevel).color
-                } animate-pulse`
-              })}
+              {React.createElement(
+                getRiskDetails(districtWeatherData.riskLevel).icon,
+                {
+                  className: `h-6 w-6 mr-2 mt-0.5 ${
+                    getRiskDetails(districtWeatherData.riskLevel).color
+                  } animate-pulse`,
+                }
+              )}
               <div>
-                <h3 className={`font-medium ${
-                  getRiskDetails(districtWeatherData.riskLevel).color
-                }`}>
+                <h3
+                  className={`font-medium ${
+                    getRiskDetails(districtWeatherData.riskLevel).color
+                  }`}
+                >
                   Weather Alert for {userData?.district}
                 </h3>
-                <p className={`text-sm ${
-                  getRiskDetails(districtWeatherData.riskLevel).color
-                } opacity-80`}>
-                  Heavy rainfall predicted for next 48 hours. River levels rising in the region. 
-                  Emergency response teams on standby.
+                <p
+                  className={`text-sm ${
+                    getRiskDetails(districtWeatherData.riskLevel).color
+                  } opacity-80`}
+                >
+                  Heavy rainfall predicted for next 48 hours. River levels
+                  rising in the region. Emergency response teams on standby.
                 </p>
                 <div className="mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className={`text-xs ${
                       getRiskDetails(districtWeatherData.riskLevel).color
                     } border-current hover:bg-opacity-10 transition-all duration-200 hover:shadow transform hover:-translate-y-0.5 active:translate-y-0`}
@@ -384,51 +405,59 @@ const GovernmentDashboard = () => {
 
         {/* District Map and Weather Data */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className={`col-span-2 bg-white shadow-sm ${getTransitionClasses()}`}>
+          <Card
+            className={`col-span-2 bg-white shadow-sm ${getTransitionClasses()}`}
+          >
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
                 <div>
-                  <CardTitle className="text-lg text-gray-900">District Flood Risk Map</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">
+                    District Flood Risk Map
+                  </CardTitle>
                   <CardDescription>
                     Real-time flood risk assessment for {userData?.district}
                   </CardDescription>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full mt-2 sm:mt-0 ${
-                  getRiskDetails(districtWeatherData.riskLevel).bgColor
-                } ${
-                  getRiskDetails(districtWeatherData.riskLevel).color
-                }`}>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full mt-2 sm:mt-0 ${
+                    getRiskDetails(districtWeatherData.riskLevel).bgColor
+                  } ${getRiskDetails(districtWeatherData.riskLevel).color}`}
+                >
                   {districtWeatherData.riskLevel.toUpperCase()} RISK
                 </span>
               </div>
             </CardHeader>
             <CardContent>
               <div className="h-[350px] border rounded overflow-hidden">
-                <FloodRiskMap 
-                  userRole="districtOfficer" 
+                <FloodRiskMap
+                  userRole={userData?.role || "unknown"}
                   assignedDistrict={userData?.district}
                 />
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="space-y-6">
-            <Card className={`bg-white shadow-sm ${getTransitionClasses()} border-l-4 ${
-              getRiskDetails(districtWeatherData.riskLevel).borderColor
-            }`}>
+            <Card
+              className={`bg-white shadow-sm ${getTransitionClasses()} border-l-4 ${
+                getRiskDetails(districtWeatherData.riskLevel).borderColor
+              }`}
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg text-gray-900">
                   <span>Risk Assessment</span>
                 </CardTitle>
                 <CardDescription className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    getRiskDetails(districtWeatherData.riskLevel).bgColor
-                  } ${
-                    getRiskDetails(districtWeatherData.riskLevel).color
-                  }`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      getRiskDetails(districtWeatherData.riskLevel).bgColor
+                    } ${getRiskDetails(districtWeatherData.riskLevel).color}`}
+                  >
                     {districtWeatherData.riskLevel.toUpperCase()} RISK
                   </span>
-                  <span className="text-gray-500">- {getRiskDetails(districtWeatherData.riskLevel).message}</span>
+                  <span className="text-gray-500">
+                    - {getRiskDetails(districtWeatherData.riskLevel).message}
+                  </span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -438,14 +467,18 @@ const GovernmentDashboard = () => {
                       <Droplets className="h-5 w-5 text-blue-500" />
                       <span className="text-gray-700">Rainfall (24h)</span>
                     </div>
-                    <span className="font-medium">{districtWeatherData.rainfall.toFixed(1)} mm</span>
+                    <span className="font-medium">
+                      {districtWeatherData.rainfall.toFixed(1)} mm
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Wind className="h-5 w-5 text-blue-500" />
                       <span className="text-gray-700">Wind Speed</span>
                     </div>
-                    <span className="font-medium">{districtWeatherData.windSpeed.toFixed(1)} km/h</span>
+                    <span className="font-medium">
+                      {districtWeatherData.windSpeed.toFixed(1)} km/h
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -467,25 +500,31 @@ const GovernmentDashboard = () => {
                       <Home className="h-4 w-4 text-blue-500" />
                       Relief Centers
                     </span>
-                    <span className="font-medium">{Math.floor(Math.random() * 15 + 3)}</span>
+                    <span className="font-medium">
+                      {Math.floor(Math.random() * 15 + 3)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-700 flex items-center gap-2">
                       <Users className="h-4 w-4 text-purple-500" />
                       Emergency Teams
                     </span>
-                    <span className="font-medium">{Math.floor(Math.random() * 10 + 2)}</span>
+                    <span className="font-medium">
+                      {Math.floor(Math.random() * 10 + 2)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-700 flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-green-500" />
                       Evacuation Routes
                     </span>
-                    <span className="font-medium">{Math.floor(Math.random() * 8 + 2)}</span>
+                    <span className="font-medium">
+                      {Math.floor(Math.random() * 8 + 2)}
+                    </span>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="w-full justify-between mt-2 text-xs hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
                   >
                     Manage Resources <ChevronRight className="h-3 w-3" />
@@ -515,7 +554,9 @@ const GovernmentDashboard = () => {
                     key={index}
                     className={`bg-blue-50 rounded-lg p-5 text-center ${getTransitionClasses()} hover:bg-blue-100`}
                   >
-                    <p className="font-semibold text-blue-800 mb-2">{day.day}</p>
+                    <p className="font-semibold text-blue-800 mb-2">
+                      {day.day}
+                    </p>
                     <div className="flex justify-center my-3">
                       <img
                         src={day.icon}
@@ -523,8 +564,12 @@ const GovernmentDashboard = () => {
                         className="h-14 w-14 transform transition-transform duration-300 hover:scale-110"
                       />
                     </div>
-                    <p className="text-xl font-bold text-gray-900 mb-1">{day.temp}</p>
-                    <p className="text-sm text-gray-600 mb-2">{day.condition}</p>
+                    <p className="text-xl font-bold text-gray-900 mb-1">
+                      {day.temp}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {day.condition}
+                    </p>
                     <p className="text-xs mt-2 text-blue-700 font-medium">
                       Rain: {day.rain}
                     </p>
@@ -556,55 +601,74 @@ const GovernmentDashboard = () => {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-gray-50 px-4 text-sm text-gray-500">Recent Updates & Alerts</span>
+            <span className="bg-gray-50 px-4 text-sm text-gray-500">
+              Recent Updates & Alerts
+            </span>
           </div>
         </div>
 
         {/* Recent Updates for District */}
         <Card className={`mb-8 bg-white shadow-sm ${getTransitionClasses()}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg text-gray-900">Recent Updates for {userData?.district}</CardTitle>
-            <CardDescription>Latest emergency information and alerts</CardDescription>
+            <CardTitle className="text-lg text-gray-900">
+              Recent Updates for {userData?.district}
+            </CardTitle>
+            <CardDescription>
+              Latest emergency information and alerts
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-5 mt-2">
               {[
-                { 
-                  title: 'Weather Alert Issued', 
-                  time: '2 hours ago',
+                {
+                  title: "Weather Alert Issued",
+                  time: "2 hours ago",
                   description: `Heavy rainfall expected in ${userData?.district} over the next 24 hours. Residents advised to stay indoors.`,
-                  type: 'alert'
+                  type: "alert",
                 },
-                { 
-                  title: 'Relief Center Update', 
-                  time: '5 hours ago',
+                {
+                  title: "Relief Center Update",
+                  time: "5 hours ago",
                   description: `3 new relief centers have been established in ${userData?.district} district to accommodate affected residents.`,
-                  type: 'info'
+                  type: "info",
                 },
-                { 
-                  title: 'Policy Update: Resource Management', 
-                  time: '1 day ago',
-                  description: 'New guidelines for emergency resource distribution approved by district administration.',
-                  type: 'status'
+                {
+                  title: "Policy Update: Resource Management",
+                  time: "1 day ago",
+                  description:
+                    "New guidelines for emergency resource distribution approved by district administration.",
+                  type: "status",
                 },
-                { 
-                  title: 'Infrastructure Status', 
-                  time: '1 day ago',
-                  description: 'All major roads are currently operational. Minor flooding reported in low-lying areas.',
-                  type: 'status'
-                }
+                {
+                  title: "Infrastructure Status",
+                  time: "1 day ago",
+                  description:
+                    "All major roads are currently operational. Minor flooding reported in low-lying areas.",
+                  type: "status",
+                },
               ].map((update, index) => (
-                <div key={index} className={`p-4 rounded-lg border ${
-                  update.type === 'alert' ? 'bg-red-50 border-red-100' :
-                  update.type === 'info' ? 'bg-blue-50 border-blue-100' :
-                  'bg-gray-50 border-gray-100'
-                }`}>
+                <div
+                  key={index}
+                  className={`p-4 rounded-lg border ${
+                    update.type === "alert"
+                      ? "bg-red-50 border-red-100"
+                      : update.type === "info"
+                      ? "bg-blue-50 border-blue-100"
+                      : "bg-gray-50 border-gray-100"
+                  }`}
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className={`font-medium ${
-                      update.type === 'alert' ? 'text-red-700' :
-                      update.type === 'info' ? 'text-blue-700' :
-                      'text-gray-700'
-                    }`}>{update.title}</h3>
+                    <h3
+                      className={`font-medium ${
+                        update.type === "alert"
+                          ? "text-red-700"
+                          : update.type === "info"
+                          ? "text-blue-700"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {update.title}
+                    </h3>
                     <span className="text-xs text-gray-500">{update.time}</span>
                   </div>
                   <p className="text-sm text-gray-600">{update.description}</p>
@@ -613,7 +677,11 @@ const GovernmentDashboard = () => {
             </div>
           </CardContent>
           <CardFooter className="pt-2">
-            <Button variant="outline" size="sm" className="w-full hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+            >
               View All Updates
             </Button>
           </CardFooter>
@@ -628,7 +696,9 @@ const GovernmentDashboard = () => {
             </p>
             <div className="flex items-center gap-2">
               <Info className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-500">Last updated: {new Date().toLocaleTimeString()}</span>
+              <span className="text-sm text-gray-500">
+                Last updated: {new Date().toLocaleTimeString()}
+              </span>
             </div>
           </div>
         </div>

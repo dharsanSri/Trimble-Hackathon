@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Shield, LogOut, Plus, AlertCircle, Info, Home } from "lucide-react";
+import { Shield, LogOut, Plus, AlertCircle, Info, Home, Briefcase, CheckCircle, Clock } from "lucide-react";
 import { db } from "@/firebase";
 import FloodRiskMap from "./FloodRiskMap";
 import { getAndStoreWeatherForecast } from "@/services/weatherService";
@@ -52,6 +52,14 @@ const CommandDashboard = () => {
     riskLevel:
       Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
   });
+
+  // Calculate work statistics
+  const workStats = {
+    total: workList.length,
+    completed: workList.filter(work => work.status === "completed").length,
+    pending: workList.filter(work => work.status === "pending").length,
+    inProgress: workList.filter(work => work.status === "in-progress").length
+  };
 
   useEffect(() => {
     fetchUserData();
@@ -271,6 +279,72 @@ const CommandDashboard = () => {
           <p className="text-gray-600">Coordinate emergency response operations and manage field teams</p>
         </div>
 
+        {/* Work Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className={`bg-white shadow-sm ${getTransitionClasses()}`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Works</p>
+                  <p className="text-3xl font-bold text-gray-900">{workStats.total}</p>
+                </div>
+                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Briefcase className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-xs text-gray-500">
+                  {workStats.inProgress > 0 && `${workStats.inProgress} in progress`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={`bg-white shadow-sm ${getTransitionClasses()}`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Completed Works</p>
+                  <p className="text-3xl font-bold text-green-600">{workStats.completed}</p>
+                </div>
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-xs text-gray-500">
+                  {workStats.total > 0 
+                    ? `${Math.round((workStats.completed / workStats.total) * 100)}% completion rate`
+                    : "No works assigned yet"
+                  }
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={`bg-white shadow-sm ${getTransitionClasses()}`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending Works</p>
+                  <p className="text-3xl font-bold text-yellow-600">{workStats.pending}</p>
+                </div>
+                <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-yellow-600" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-xs text-gray-500">
+                  {workStats.pending > 0 
+                    ? "Awaiting assignment"
+                    : "All works assigned"
+                  }
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card className={`col-span-2 bg-white shadow-sm ${getTransitionClasses()}`}>
           <CardHeader className="pb-2">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -289,7 +363,7 @@ const CommandDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[350px] border rounded overflow-hidden">
-              <FloodRiskMap userRole="districtOfficer" assignedDistrict={userData?.district} />
+              <FloodRiskMap userRole={userData?.role || "unknown"} assignedDistrict={userData?.district} />
             </div>
           </CardContent>
         </Card>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, collection, updateDoc, onSnapshot } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,25 +34,36 @@ import {
   BarChart3,
 } from "lucide-react";
 
-import { collection, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import FloodRiskMap from "./FloodRiskMap";
 import FloodPredictionStats from "./FloodPredictionStats";
 import { getAndStoreWeatherForecast } from "@/services/weatherService";
-import { districtCoordinates } from "@/lib/geoData";
+
+interface WorkAssignment {
+  id: string;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high";
+  status: "pending" | "in-progress" | "completed";
+  assignedTo: string;
+  comment?: string;
+  timestamp?: any;
+  district?: string;
+}
 
 const FieldDashboard = () => {
   const navigate = useNavigate();
-  const [availableWork, setAvailableWork] = useState([]);
-  const [selectedWork, setSelectedWork] = useState([]);
+  const [availableWork, setAvailableWork] = useState<WorkAssignment[]>([]);
+  const [selectedWork, setSelectedWork] = useState<WorkAssignment[]>([]);
   const [loadingWork, setLoadingWork] = useState(true);
-  const [updatingWorkIds, setUpdatingWorkIds] = useState(new Set());
-  const [taskComments, setTaskComments] = useState({}); // comment per task
+  const [updatingWorkIds, setUpdatingWorkIds] = useState<Set<string>>(new Set());
+  const [taskComments, setTaskComments] = useState<{ [key: string]: string }>({});
   const [weatherForecast, setWeatherForecast] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [districtWeatherData, setDistrictWeatherData] = useState<any>({
     rainfall: Math.random() * 50 + 10,
     windSpeed: Math.random() * 30 + 5,
@@ -60,10 +71,27 @@ const FieldDashboard = () => {
     riskLevel:
       Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
   });
+
+  // Authentication state listener
   useEffect(() => {
-    fetchUserData();
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchUserData();
+      } else {
+        navigate("/");
+      }
+      setAuthChecked(true);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // Fetch weather data on component mount
+  useEffect(() => {
     fetchWeatherData();
   }, []);
+
   const fetchUserData = async () => {
     try {
       const auth = getAuth();
@@ -75,7 +103,6 @@ const FieldDashboard = () => {
         return;
       }
 
-      // Get user document from Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -85,7 +112,6 @@ const FieldDashboard = () => {
         return;
       }
 
-      // Get further details document
       const furtherDetailsDocRef = doc(db, "furtherdetails", user.uid);
       const furtherDetailsDoc = await getDoc(furtherDetailsDocRef);
 
@@ -95,13 +121,14 @@ const FieldDashboard = () => {
         return;
       }
 
-      // Combine user data
-      const userData = {
+      const combinedUserData = {
         ...userDoc.data(),
         ...furtherDetailsDoc.data(),
       };
 
-      setUserData(userData);
+      console.log("Loaded user data with district:", combinedUserData.district);
+      setUserData(combinedUserData);
+      setError(null);
     } catch (err: any) {
       console.error("Error fetching user data:", err);
       setError(err.message || "Failed to load user data");
@@ -117,9 +144,7 @@ const FieldDashboard = () => {
 
       const dailyForecast = data.forecast.forecastday.map((day: any) => {
         const date = new Date(day.date);
-        const dayName = date.toLocaleDateString("en-US", {
-          weekday: "short",
-        });
+        const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
         const temp = Math.round(day.day.avgtemp_c) + "°C";
         const rain = Math.round(day.day.daily_chance_of_rain) + "%";
         const condition = day.day.condition.text;
@@ -130,7 +155,6 @@ const FieldDashboard = () => {
 
       setWeatherForecast(dailyForecast);
 
-      // Update district weather data
       setDistrictWeatherData({
         rainfall: Math.random() * 50 + 10,
         windSpeed: Math.random() * 30 + 5,
@@ -139,103 +163,116 @@ const FieldDashboard = () => {
           Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
       });
     } catch (err: any) {
+      console.error("Error fetching weather data:", err);
       setError(err.message);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
+  // Real-time work assignments listener
+  useEffect(() => {
+    if (!userData?.district) {
+      setLoadingWork(false);
+      return;
+    }
 
-
-interface WorkAssignment {
-  id: string;
-  title: string;
-  description: string;
-  priority: "low" | "medium" | "high";
-  status: "pending" | "in-progress" | "completed";
-  assignedTo: string;
-  comment?: string;
-  timestamp?: any;
-  district: string;
-}
-const fetchWorkAssignments = async () => {
-  try {
+    console.log("Setting up real-time listener for district:", userData.district);
     setLoadingWork(true);
 
-    const querySnapshot = await getDocs(collection(db, "newcollection"));
-    const works: WorkAssignment[] = [];
-
-    querySnapshot.forEach((docSnap) => {
-      // tell TS that docSnap.data() is of type WorkAssignment
-      const work = { id: docSnap.id, ...(docSnap.data() as WorkAssignment) };
- 
-
-      // Only include work if district matches current user
-      if (work?.district === userData.district) {
-        works.push(work);
-      }
-    });
-
-    setAvailableWork(
-      works.filter(
-        (work) => work?.status !== "completed" && work?.status !== "in-progress"
-      )
-    );
-
-    setSelectedWork(
-      works.filter((work) => work?.status === "in-progress")
-    );
-  } catch (error) {
-    console.error("Error fetching work assignments:", error);
-  } finally {
-    setLoadingWork(false);
-  }
-};
-
-
-
-  useEffect(() => {
-    fetchWorkAssignments();
-  }, []);
-
-  const handleLogout = () => {
-    navigate("/");
-  };
-
-  const handleSelectWork = async (workId) => {
-    if (updatingWorkIds.has(workId)) return;
-    setUpdatingWorkIds(new Set(updatingWorkIds).add(workId));
-
-    const work = availableWork.find((w) => w.id === workId);
-    if (work) {
-      try {
-        await updateDoc(doc(db, "newcollection", workId), {
-          status: "in-progress",
+    const unsubscribe = onSnapshot(
+      collection(db, "newcollection"),
+      (snapshot) => {
+        const works: WorkAssignment[] = [];
+        
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.district === userData.district) {
+            works.push({
+              id: docSnap.id,
+              title: data.title ?? "Untitled",
+              description: data.description ?? "No description provided",
+              priority: data.priority ?? "low",
+              status: data.status ?? "pending",
+              assignedTo: data.assignedTo ?? "Unassigned",
+              comment: data.comment ?? "",
+              timestamp: data.timestamp,
+              district: data.district,
+            });
+          }
         });
-        await fetchWorkAssignments();
-      } catch (err) {
-        console.error("Failed to update work status:", err);
-        alert("Failed to select work. Please try again.");
+
+        console.log("Loaded works from real-time listener:", works.length);
+
+        // Separate available and selected work
+        const available = works.filter(
+          (work) => work.status === "pending"
+        );
+        const selected = works.filter(
+          (work) => work.status === "in-progress"
+        );
+
+        setAvailableWork(available);
+        setSelectedWork(selected);
+        setLoadingWork(false);
+      },
+      (error) => {
+        console.error("Error in real-time listener:", error);
+        setError("Failed to load work assignments");
+        setLoadingWork(false);
       }
+    );
+
+    return () => {
+      console.log("Cleaning up real-time listener");
+      unsubscribe();
+    };
+  }, [userData?.district]);
+
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
-    setUpdatingWorkIds((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(workId);
-      return newSet;
-    });
   };
 
-  const handleCommentChange = (workId, value) => {
+  const handleSelectWork = async (workId: string) => {
+    if (updatingWorkIds.has(workId)) return;
+    
+    setUpdatingWorkIds(prev => new Set(prev).add(workId));
+
+    try {
+      await updateDoc(doc(db, "newcollection", workId), {
+        status: "in-progress",
+        assignedTo: userData?.name || "Field Worker"
+      });
+      console.log("Work selected successfully:", workId);
+    } catch (err) {
+      console.error("Failed to update work status:", err);
+      alert("Failed to select work. Please try again.");
+    } finally {
+      setUpdatingWorkIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(workId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleCommentChange = (workId: string, value: string) => {
     setTaskComments((prev) => ({
       ...prev,
       [workId]: value,
     }));
   };
 
-  const handleCompleteWork = async (workId) => {
+  const handleCompleteWork = async (workId: string) => {
     if (updatingWorkIds.has(workId)) return;
-    setUpdatingWorkIds(new Set(updatingWorkIds).add(workId));
+    
+    setUpdatingWorkIds(prev => new Set(prev).add(workId));
 
     const comment = taskComments[workId] || "";
 
@@ -244,26 +281,28 @@ const fetchWorkAssignments = async () => {
         status: "completed",
         comment: comment,
       });
-      await fetchWorkAssignments();
+
+      // Clear the comment from state
+      setTaskComments((prev) => {
+        const updated = { ...prev };
+        delete updated[workId];
+        return updated;
+      });
+
+      console.log("Work completed successfully:", workId);
     } catch (error) {
       console.error("Error updating work status:", error);
       alert("Failed to mark work as completed. Please try again.");
+    } finally {
+      setUpdatingWorkIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(workId);
+        return newSet;
+      });
     }
-
-    setUpdatingWorkIds((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(workId);
-      return newSet;
-    });
-
-    setTaskComments((prev) => {
-      const updated = { ...prev };
-      delete updated[workId];
-      return updated;
-    });
   };
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
         return "border-red-500 bg-red-50";
@@ -275,48 +314,74 @@ const fetchWorkAssignments = async () => {
         return "border-gray-500 bg-gray-50";
     }
   };
-    // New utility function for smooth transitions
-    const getTransitionClasses = () => {
-      return "transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg";
-    };
-  
-    // Enhanced color palette and risk assessment
-    const getRiskDetails = (risk: string) => {
-      switch (risk) {
-        case "high":
-          return {
-            color: "text-red-700",
-            bgColor: "bg-red-50",
-            borderColor: "border-red-300",
-            icon: AlertCircle,
-            message: "Critical Risk - Immediate Action Required",
-          };
-        case "medium":
-          return {
-            color: "text-yellow-700",
-            bgColor: "bg-yellow-50",
-            borderColor: "border-yellow-300",
-            icon: Info,
-            message: "Moderate Risk - Stay Vigilant",
-          };
-        case "low":
-          return {
-            color: "text-green-700",
-            bgColor: "bg-green-50",
-            borderColor: "border-green-300",
-            icon: Home,
-            message: "Low Risk - Normal Operations",
-          };
-        default:
-          return {
-            color: "text-gray-700",
-            bgColor: "bg-gray-50",
-            borderColor: "border-gray-300",
-            icon: Info,
-            message: "Status Unknown",
-          };
-      }
-    };
+
+  const getTransitionClasses = () => {
+    return "transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg";
+  };
+
+  const getRiskDetails = (risk: string) => {
+    switch (risk) {
+      case "high":
+        return {
+          color: "text-red-700",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-300",
+          icon: AlertCircle,
+          message: "Critical Risk - Immediate Action Required",
+        };
+      case "medium":
+        return {
+          color: "text-yellow-700",
+          bgColor: "bg-yellow-50",
+          borderColor: "border-yellow-300",
+          icon: Info,
+          message: "Moderate Risk - Stay Vigilant",
+        };
+      case "low":
+        return {
+          color: "text-green-700",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-300",
+          icon: Home,
+          message: "Low Risk - Normal Operations",
+        };
+      default:
+        return {
+          color: "text-gray-700",
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-300",
+          icon: Info,
+          message: "Status Unknown",
+        };
+    }
+  };
+
+  // Show loading while checking authentication
+  if (!authChecked || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-600" />
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -329,14 +394,19 @@ const fetchWorkAssignments = async () => {
                 Field Worker Portal
               </h1>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                {userData?.name} - {userData?.district}
+              </span>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -361,14 +431,57 @@ const fetchWorkAssignments = async () => {
               <CardDescription>Your active field location</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-bold text-blue-600">Sector 7-A</p>
-              <p className="text-sm text-gray-600">Downtown patrol zone</p>
+              <p className="text-lg font-bold text-blue-600">{userData?.district}</p>
+              <p className="text-sm text-gray-600">Active monitoring zone</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Available Tasks
+              </CardTitle>
+              <CardDescription>Pending assignments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-bold text-green-600">{availableWork.length}</p>
+              <p className="text-sm text-gray-600">Ready to assign</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-blue-600" />
+                In Progress
+              </CardTitle>
+              <CardDescription>Active assignments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-bold text-blue-600">{selectedWork.length}</p>
+              <p className="text-sm text-gray-600">Currently working</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                Risk Level
+              </CardTitle>
+              <CardDescription>Current district status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-lg font-bold ${getRiskDetails(districtWeatherData.riskLevel).color}`}>
+                {districtWeatherData.riskLevel.toUpperCase()}
+              </p>
+              <p className="text-sm text-gray-600">Flood risk level</p>
             </CardContent>
           </Card>
         </div>
-        <Card
-          className={`col-span-2 bg-white shadow-sm ${getTransitionClasses()}`}
-        >
+
+        <Card className={`col-span-2 bg-white shadow-sm mb-8 ${getTransitionClasses()}`}>
           <CardHeader className="pb-2">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div>
@@ -380,9 +493,9 @@ const fetchWorkAssignments = async () => {
                 </CardDescription>
               </div>
               <span
-                className={`text-xs px-2 py-1 rounded-full mt-2 sm:mt-0 ${
-                  getRiskDetails(districtWeatherData.riskLevel).bgColor
-                } ${getRiskDetails(districtWeatherData.riskLevel).color}`}
+                className={`text-xs px-2 py-1 rounded-full mt-2 sm:mt-0 ${getRiskDetails(
+                  districtWeatherData.riskLevel
+                ).bgColor} ${getRiskDetails(districtWeatherData.riskLevel).color}`}
               >
                 {districtWeatherData.riskLevel.toUpperCase()} RISK
               </span>
@@ -391,12 +504,13 @@ const fetchWorkAssignments = async () => {
           <CardContent>
             <div className="h-[350px] border rounded overflow-hidden">
               <FloodRiskMap
-                userRole="districtOfficer"
+                userRole={userData?.role || "unknown"}
                 assignedDistrict={userData?.district}
               />
             </div>
           </CardContent>
         </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card>
             <CardHeader>
@@ -404,19 +518,19 @@ const fetchWorkAssignments = async () => {
                 <CheckCircle className="h-5 w-5 text-blue-600" />
                 Available Work Assignments
               </CardTitle>
-              <CardDescription>
-                Select work assignments to begin
-              </CardDescription>
+              <CardDescription>Select work assignments to begin</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingWork ? (
-                <p className="text-gray-500 text-center">
-                  Loading work assignments...
-                </p>
+                <div className="text-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
+                  <p className="text-gray-500">Loading work assignments...</p>
+                </div>
               ) : availableWork.length === 0 ? (
-                <p className="text-gray-500 text-center">
-                  No work assignments available at the moment.
-                </p>
+                <div className="text-center py-8">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500">No work assignments available at the moment.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {availableWork.map((work) => (
@@ -429,7 +543,7 @@ const fetchWorkAssignments = async () => {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold">{work.title}</h4>
                         <span className="text-xs px-2 py-1 bg-gray-100 rounded">
-                          {work.priority ? work.priority.toUpperCase() : "N/A"}
+                          {work.priority.toUpperCase()}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3">
@@ -442,7 +556,7 @@ const fetchWorkAssignments = async () => {
                         disabled={updatingWorkIds.has(work.id)}
                       >
                         {updatingWorkIds.has(work.id)
-                          ? "Updating..."
+                          ? "Selecting..."
                           : "Select This Work"}
                       </Button>
                     </div>
@@ -455,19 +569,19 @@ const fetchWorkAssignments = async () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <RefreshCw className="h-5 w-5 text-green-600" />
                 My Current Work
               </CardTitle>
-              <CardDescription>
-                Track and complete assigned tasks
-              </CardDescription>
+              <CardDescription>Track and complete assigned tasks</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {selectedWork.length === 0 ? (
-                  <p className="text-gray-500 text-center">
-                    No current work in progress.
-                  </p>
+                  <div className="text-center py-8">
+                    <HardHat className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No current work in progress.</p>
+                    <p className="text-sm text-gray-400">Select an assignment to get started.</p>
+                  </div>
                 ) : (
                   selectedWork.map((work) => (
                     <div
@@ -478,50 +592,41 @@ const fetchWorkAssignments = async () => {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold">{work.title}</h4>
-                        <span
-                          className={`text-xs px-2 py-1 rounded ${
-                            work.status === "completed"
-                              ? "bg-green-100 text-green-600"
-                              : "bg-blue-100 text-blue-600"
-                          }`}
-                        >
-                          {work.status.toUpperCase()}
+                        <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600">
+                          IN PROGRESS
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3">
                         {work.description}
                       </p>
 
-                      {work.status !== "completed" && (
-                        <>
-                          <Label
-                            htmlFor={`comment-${work.id}`}
-                            className="text-sm"
-                          >
-                            Comment for this task
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor={`comment-${work.id}`} className="text-sm">
+                            Work Progress Comments
                           </Label>
                           <Textarea
                             id={`comment-${work.id}`}
-                            placeholder="Write your observations here..."
+                            placeholder="Document your work progress, findings, or any issues encountered..."
                             value={taskComments[work.id] || ""}
                             onChange={(e) =>
                               handleCommentChange(work.id, e.target.value)
                             }
                             rows={3}
-                            className="mb-3"
+                            className="mt-1"
                           />
-                          <Button
-                            onClick={() => handleCompleteWork(work.id)}
-                            size="sm"
-                            className="w-full bg-green-600 hover:bg-green-700"
-                            disabled={updatingWorkIds.has(work.id)}
-                          >
-                            {updatingWorkIds.has(work.id)
-                              ? "Updating..."
-                              : "Mark as Completed"}
-                          </Button>
-                        </>
-                      )}
+                        </div>
+                        <Button
+                          onClick={() => handleCompleteWork(work.id)}
+                          size="sm"
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          disabled={updatingWorkIds.has(work.id)}
+                        >
+                          {updatingWorkIds.has(work.id)
+                            ? "Completing..."
+                            : "Mark as Completed"}
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}
