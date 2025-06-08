@@ -316,6 +316,19 @@ pip install -r requirements.txt
    For backend:uvicorn main:app --reload
    For frontend:npm run dev
  ```
+## 🖼️ Screenshots
+
+### 🔐 Login Page
+![Login Page]("C:\Users\Sridharshan\Pictures\Screenshots\Screenshot 2025-06-09 030813.png")
+
+### 📊 Government Dashboard
+![Government Dashboard](screenshots/gov-dashboard.png)
+
+### 🗺️ Flood Risk Map
+![Flood Map](screenshots/flood-map.png)
+
+### ✅ Task Assignment & Completion Flow
+![Task Flow](screenshots/task-flow.png)
 
 
 
