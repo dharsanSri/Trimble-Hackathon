@@ -110,3 +110,14 @@ TRIMBLE-HACKATHON/
    |         +-- Assign Tasks to Field Workers
    +-- View Weather & Flood Maps
 ```
+## 1. 🔐 Authentication System (Firebase)
+
+**What it does**:  
+Secures login and restricts role-based access.
+
+**How it works**:  
+Uses Firebase Authentication to ensure only verified and approved users can log in.
+
+**Admin Layer**:  
+Admin reviews and approves users via Firestore before they gain access.
+
