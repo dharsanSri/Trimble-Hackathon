@@ -8,7 +8,7 @@ The **Emergency Management System (EMS)** is designed to help district governmen
 
 ```plaintext
  ┌────────────────────┐
- │     Frontend       │  ← Vite + React + Tailwind
+ │     Frontend       │  ← Vite + React + Tailwind + TypeScript
  └────────┬───────────┘
           │
           ▼
@@ -249,7 +249,6 @@ cd emergency-management-system
 - `pip` package manager
 - `.env` file with the following keys:
   - `WEATHERAPI_KEY`
-  - `MAPBOX_API_KEY`
   - `OPENROUTER_API_KEY`
   - Firebase credentials (if using Firebase Admin SDK)
 
