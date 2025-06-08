@@ -121,5 +121,74 @@ Uses Firebase Authentication to ensure only verified and approved users can log 
 
 **Admin Layer**:  
 Admin reviews and approves users via Firestore before they gain access.
+
+## 2. 🧭 Frontend (React + Vite + TailwindCSS + TypeScript)
+
+**UI Framework**:  
+Built using Vite for fast builds and React for a dynamic interface.
+
+**Styling**:  
+TailwindCSS combined with ShadCN-UI ensures a responsive, modern UI.
+
+**Role-specific Dashboards**:
+- **Government Official**: Views 3-day weather forecasts & AI-predicted flood risk maps.
+- **Command Officer**: Creates, assigns, and tracks emergency response tasks.
+- **Field Worker**: Views assigned tasks, marks them as completed, and adds comments.
+
 ---
+
+## 3. 🌦️ Weather Service Integration
+
+**API Used**:  
+[WeatherAPI.com](https://weatherapi.com)
+
+**Purpose**:  
+Fetches historical and current weather data (temperature, rainfall, humidity).
+
+**Usage**:  
+3-day history is used as input to the AI model for flood prediction.
+
+---
+
+## 4. 🧠 Flood Risk Prediction (OpenRouter AI + LLaMA 3)
+
+**Prompt-Based AI**:  
+Sends weather history and district name to OpenRouter API with a domain-specific hydrology prompt.
+
+**Output**:  
+GeoJSON map with risk levels — `High`, `Moderate`, and `Low` — by region.
+
+**Why it matters**:  
+Helps government officials visually identify flood-prone zones for better preparedness and resource allocation.
+
+---
+
+## 5. 🗺️ GIS and Mapping (Leaflet + GeoJSON)
+
+**Frontend Tool**:  
+[Leaflet.js](https://leafletjs.com)
+
+**Purpose**:  
+Visualizes flood risk zones using color-coded overlays on a map.
+
+**Integration**:  
+GeoJSON output from OpenRouter AI is rendered in real-time on the dashboard.
+
+---
+
+## 6. ✅ Task Management Workflow
+
+### Command Officer:
+- Creates emergency response tasks.
+- Assigns tasks to field workers.
+- Sets task priority (High, Medium, Low).
+
+### Field Worker:
+- Views assigned tasks in the dashboard.
+- Marks tasks as complete.
+- Leaves optional comments on task progress or outcome.
+
+### Command Dashboard:
+- Tracks task status (Pending / Completed) for monitoring and accountability.
+
 
