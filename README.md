@@ -242,4 +242,38 @@ git clone https://github.com/your-username/emergency-management-system.git
 cd emergency-management-system
 ```
 
+## 🧪 2. Backend Setup (FastAPI + Firebase)
+
+### 📌 Prerequisites
+- Python 3.9+
+- `pip` package manager
+- `.env` file with the following keys:
+  - `WEATHERAPI_KEY`
+  - `MAPBOX_API_KEY`
+  - `OPENROUTER_API_KEY`
+  - Firebase credentials (if using Firebase Admin SDK)
+
+---
+
+### 📦 Install Python Dependencies
+
+Create a virtual environment and install dependencies:
+
+```bash
+python -m venv venv
+source venv/bin/activate       # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+## 🚀 Running the Project
+
+### 🧪 Run Backend (FastAPI) and Frontend (React) Seperately
+
+
+   ```bash
+   For backend:uvicorn main:app --reload
+   For frontend:npm run dev
+ ```
+
+
 
