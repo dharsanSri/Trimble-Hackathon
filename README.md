@@ -231,4 +231,15 @@ District governments need a unified, responsive system to forecast, analyze, and
 
 ---
 
+## 🛠️ Getting Started
+
+Follow the steps below to clone, set up, and run the project locally.
+
+### 📥 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/emergency-management-system.git
+cd emergency-management-system
+```
+
 
