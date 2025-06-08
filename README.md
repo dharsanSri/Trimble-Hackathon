@@ -191,4 +191,6 @@ GeoJSON output from OpenRouter AI is rendered in real-time on the dashboard.
 ### Command Dashboard:
 - Tracks task status (Pending / Completed) for monitoring and accountability.
 
+---
+
 
