@@ -316,7 +316,35 @@ pip install -r requirements.txt
    For backend:uvicorn main:app --reload
    For frontend:npm run dev
  ```
-## 🖼️ Screenshots
+## 🌊 AI Prompt: Flood Risk Prediction
+
+**Role**: You are an expert flood risk analyst with deep knowledge in:
+- Hydrology
+- Soil types
+- Land use
+- Drainage infrastructure
+- Historical flood data
+
+**Objective**: Predict flood-prone zones in a given district using weather data and environmental reasoning.
+
+---
+
+## prompt 
+
+You are an expert flood risk analyst with knowledge of hydrology, topography, land use, drainage, and historical flood data.
+
+Given the past 3 days of weather data for [District Name], return a JSON list of flood risk levels for each district or sub-region. You are not required to define polygon coordinates—just assign a flood risk level (High, Moderate, Low) and a short justification.
+
+Use this format:
+{
+  "district": "District Name",
+  "risk_level": "High",
+  "reason": "High rainfall + clay soil + low elevation"
+}
+
+---
+
+
 
 
 
