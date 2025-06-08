@@ -178,18 +178,56 @@ GeoJSON output from OpenRouter AI is rendered in real-time on the dashboard.
 
 ## 6. ✅ Task Management Workflow
 
-### Command Officer:
+### Command Officer Dashboard:
 - Creates emergency response tasks.
 - Assigns tasks to field workers.
 - Sets task priority (High, Medium, Low).
 
-### Field Worker:
+### Field Worker Dashboard:
 - Views assigned tasks in the dashboard.
 - Marks tasks as complete.
 - Leaves optional comments on task progress or outcome.
 
-### Command Dashboard:
+### Command-officer Dashboard:
 - Tracks task status (Pending / Completed) for monitoring and accountability.
+
+---
+
+## 7. 🧩 Backend (FastAPI)
+
+**Purpose**:  
+
+- Flood risk prompt generation
+
+## 8. ☁️ Firebase Firestore
+
+**Used for**:
+- Storing approved users
+- Storing task details (e.g., status, assigned user, timestamps)
+
+**Why Firebase**:
+- Easy to integrate with both frontend and backend
+- Provides real-time updates
+- Highly scalable for large-scale emergencies
+
+---
+
+## 🧠 Your Overall Approach
+
+### ✅ Problem Statement
+District governments need a unified, responsive system to forecast, analyze, and respond effectively to flood emergencies.
+
+### ✅ Design Philosophy
+- Modular architecture (independent weather, task, and auth modules)
+- Role-based access and workflows (Government Official, Commandofficer, Fieldworker)
+- Real-time GeoJSON-based flood zone visualization
+- Lightweight UI coupled with a powerful AI backend
+
+### ✅ Key Goals Met
+- Secure login with admin role approval
+- Interactive GIS-based flood visualization
+- Real-time task collaboration between command officer and field workers
+- AI-driven flood risk insights without the need for satellite imagery
 
 ---
 
