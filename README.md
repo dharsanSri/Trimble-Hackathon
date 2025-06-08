@@ -83,3 +83,30 @@ TRIMBLE-HACKATHON/
 ├── tsconfig.node.json
 └── vite.config.ts           # Vite configuration
 ```
+## 🔄 Project Workflow
+
+```plaintext
++--------------------------+
+|     User Login Page     | ← Firebase Authentication
++--------------------------+
+           |
+           v
++--------------------------+
+|   Admin Role Approval    | ← Admin must approve each user
++--------------------------+
+           |
+           v
++--------------------------+
+|   Role-Based Dashboard   |
++--------------------------+
+   |         |         |
+   v         v         v
++---------+ +--------+ +-------------------+
+| Govt.   | | Cmd Of | | Field Worker      |
+| Officer | | ficer  | | Dashboard         |
++---------+ +--------+ +-------------------+
+   |         |             |
+   |         |             +-- View & Complete Tasks
+   |         +-- Assign Tasks to Field Workers
+   +-- View Weather & Flood Maps
+```
